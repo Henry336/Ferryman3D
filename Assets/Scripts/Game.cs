@@ -81,7 +81,7 @@ public class Game : MonoBehaviour
         }
 
         waterMat = Art.Water();
-        Art.Obj("Water", null, MeshKit.Grid(-45f, 45f, -6f, 60f, 220, 80), waterMat);
+        Art.Obj("Water", null, MeshKit.Grid(-45f, 45f, -30f, 60f, 220, 120), waterMat);
 
         // Embers / soul motes drifting in the air.
         var emberMat = Art.Glow(new Color(1f, 0.75f, 0.45f, 0.9f), 0.8f, 1.5f);
@@ -471,13 +471,13 @@ public class Game : MonoBehaviour
         switch (state)
         {
             case State.Title:
-                GUI.Label(new Rect(0, H * 0.18f, W, H * 0.15f), "FERRYMAN", big);
-                GUI.Label(new Rect(0, H * 0.32f, W, H * 0.06f), "One last crossing.", mid);
+                GUI.Label(new Rect(0, H * 0.06f, W, H * 0.15f), "FERRYMAN", big);
+                GUI.Label(new Rect(0, H * 0.19f, W, H * 0.06f), "One last crossing.", mid);
                 GUI.Label(new Rect(0, H * 0.82f, W, H * 0.06f), Blink() ? "Press Z or tap to begin" : "", mid);
-                GUI.Label(new Rect(0, H * 0.89f, W, H * 0.05f), "← →  move     Z  slash / poke     R  restart", small);
+                GUI.Label(new Rect(0, H * 0.89f, W, H * 0.05f), "Arrows  move     Z  slash / poke     R  restart", small);
                 break;
             case State.Card:
-                GUI.Label(new Rect(0, H * 0.22f, W, H * 0.1f), L.from + "  →  " + L.to, big);
+                GUI.Label(new Rect(0, H * 0.1f, W, H * 0.1f), L.from + "  to  " + L.to, big);
                 break;
             case State.Play:
             case State.Dock:
@@ -514,8 +514,8 @@ public class Game : MonoBehaviour
 
         if (GameInput.TouchMode && (state == State.Play || state == State.Dock))
         {
-            GUI.Box(GameInput.LeftBtn, "◀", btn);
-            GUI.Box(GameInput.RightBtn, "▶", btn);
+            GUI.Box(GameInput.LeftBtn, "<", btn);
+            GUI.Box(GameInput.RightBtn, ">", btn);
             GUI.Box(GameInput.SlashBtn, "Slash", btn);
             GUI.Box(GameInput.ActBtn, "Act", btn);
             if (GUI.Button(new Rect(W - 90 * H / 720f, 10, 80 * H / 720f, 50 * H / 720f), "R", btn)) { confirmOpen = true; Time.timeScale = 0f; }

@@ -66,7 +66,7 @@ public class Soul : MonoBehaviour
         LocalX = Mathf.Clamp(LocalX, -lim, lim);
 
         float bob = Mathf.Sin(Time.time * 2.3f + phase) * 0.08f;
-        transform.position = boat.DeckPoint(LocalX) + Vector3.up * (0.55f + bob) + new Vector3(0, 0, 0.25f);
+        transform.position = boat.DeckPoint(LocalX) + Vector3.up * (0.95f + bob) + new Vector3(0, 0, 0.2f);
 
         Color c = baseColor;
         if (vengeful && stun > 0f) c = Color.Lerp(baseColor, new Color(0.75f, 0.85f, 1f, baseColor.a), 0.6f);
