@@ -7,6 +7,7 @@ public class Tuning : MonoBehaviour
 
     [Header("Boat tilt")]
     [Tooltip("Tilt (degrees) past which water floods in and the boat sinks.")] public float maxSafeAngle = 25f;
+    [Tooltip("Seconds the boat may stay past maxSafeAngle (taking on water) before it floods.")] public float floodGrace = 0.6f;
     [Tooltip("Angular acceleration (deg/s²) per unit of torque.")] public float torqueToAccel = 4f;
     [Tooltip("Spring pulling the boat back to level (deg/s² per degree).")] public float leveling = 1.2f;
     [Tooltip("Angular velocity damping per second.")] public float angularDamping = 1.6f;

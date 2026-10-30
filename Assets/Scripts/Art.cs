@@ -48,6 +48,60 @@ public static class Art
         return m;
     }
 
+    public static Material ToonTex(Texture tex, float outline = 0.02f)
+    {
+        var m = new Material(Resources.Load<Shader>("Shaders/ToonTex"));
+        if (tex) m.SetTexture("_MainTex", tex);
+        m.SetFloat("_Outline", outline);
+        return m;
+    }
+
+    // Spawns Resources/Models/<name>, gives it a ToonTex material, rotates it by yaw, scales its
+    // height (or length along X when byLength) to size and sits its bottom centre on the parent's origin.
+    // Returns null if the model isn't in the build, so callers can fall back to placeholder shapes.
+    public static GameObject Model(string name, Transform parent, float size, float yaw = 0f, bool byLength = false, Material mat = null)
+    {
+        var prefab = Resources.Load<GameObject>("Models/" + name);
+        if (!prefab) return null;
+        var holder = new GameObject(name).transform;
+        holder.SetParent(parent, false);
+        var g = Object.Instantiate(prefab, holder);
+        g.transform.localPosition = Vector3.zero;
+        g.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
+        if (!mat) mat = ToonTex(Resources.Load<Texture2D>("Models/" + name + "_tex"));
+        var rends = g.GetComponentsInChildren<Renderer>();
+        foreach (var r in rends)
+        {
+            var mats = new Material[r.sharedMaterials.Length];
+            for (int i = 0; i < mats.Length; i++) mats[i] = mat;
+            r.sharedMaterials = mats;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            r.receiveShadows = false;
+            if (r is SkinnedMeshRenderer s) s.updateWhenOffscreen = true;
+        }
+        // Fit using bounds measured in the holder's space.
+        var b = new Bounds();
+        bool first = true;
+        // Measure the mesh's own corners: a fresh SkinnedMeshRenderer reports stale bounds.
+        foreach (var r in rends)
+        {
+            Mesh mesh = r is SkinnedMeshRenderer sk ? sk.sharedMesh : r.GetComponent<MeshFilter>()?.sharedMesh;
+            if (!mesh) continue;
+            var mb = mesh.bounds;
+            for (int c = 0; c < 8; c++)
+            {
+                var corner = mb.center + Vector3.Scale(mb.extents, new Vector3((c & 1) == 0 ? -1 : 1, (c & 2) == 0 ? -1 : 1, (c & 4) == 0 ? -1 : 1));
+                var p = holder.InverseTransformPoint(r.transform.TransformPoint(corner));
+                if (first) { b = new Bounds(p, Vector3.zero); first = false; } else b.Encapsulate(p);
+            }
+        }
+        float current = byLength ? b.size.x : b.size.y;
+        float k = current > 1e-4f ? size / current : 1f;
+        g.transform.localScale *= k;
+        g.transform.localPosition = -new Vector3(b.center.x, b.min.y, b.center.z) * k;
+        return holder.gameObject;
+    }
+
     public static GameObject Obj(string name, Transform parent, Mesh mesh, Material mat)
     {
         var g = new GameObject(name);

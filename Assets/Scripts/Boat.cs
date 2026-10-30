@@ -12,12 +12,13 @@ public class Boat : MonoBehaviour
     public Material hullMat;
     public Transform visual;
 
-    float sinkOffset, failTimer, failStartAngle, failStartY;
+    float sinkOffset, failTimer, failStartAngle, failStartY, floodTimer;
+    public float FloodFraction => floodTimer / Mathf.Max(0.01f, Tuning.I.floodGrace);
     Color outlineSafe = new Color(0.02f, 0.02f, 0.03f);
 
     public void ResetState()
     {
-        Angle = AngVel = SinkMeter = sinkOffset = 0f;
+        Angle = AngVel = SinkMeter = sinkOffset = floodTimer = 0f;
         Failed = false; Docked = false; FailReason = "";
         transform.position = Vector3.zero;
         transform.rotation = Quaternion.identity;
@@ -43,13 +44,20 @@ public class Boat : MonoBehaviour
         SinkMeter = Mathf.Clamp01(SinkMeter);
         sinkOffset = Mathf.MoveTowards(sinkOffset, SinkMeter * T.sinkDepth, 0.6f * dt);
 
+        if (Mathf.Abs(Angle) <= T.maxSafeAngle) floodTimer = Mathf.Max(0f, floodTimer - dt * 2f);
         if (Docked) Angle = Mathf.Clamp(Angle, -T.maxSafeAngle * 0.8f, T.maxSafeAngle * 0.8f);
-        else if (Mathf.Abs(Angle) > T.maxSafeAngle) Fail("The boat tipped too far and flooded.");
+        else if (Mathf.Abs(Angle) > T.maxSafeAngle)
+        {
+            // Taking on water: recoverable until the grace window runs out.
+            if (floodTimer == 0f) { Sfx.Play("sfx_sink_warn", 0.9f, 0.8f); CameraRig.Shake(0.15f); }
+            floodTimer += dt;
+            if (floodTimer >= T.floodGrace) Fail("The boat tipped too far and flooded.");
+        }
         else if (SinkMeter >= 1f) Fail("The hands dragged the boat under.");
 
         float bob = (Waves.Height(L * 0.6f, 0f) + Waves.Height(-L * 0.6f, 0f)) * 0.5f;
         float lift = T.tiltLift * Mathf.Abs(Mathf.Sin(Angle * Mathf.Deg2Rad));
-        transform.position = new Vector3(0f, bob - sinkOffset + lift, 0f);
+        transform.position = new Vector3(0f, bob - sinkOffset + lift - FloodFraction * 0.25f, 0f);
         transform.rotation = Quaternion.Euler(0f, 0f, Angle);
         UpdateOutline();
     }

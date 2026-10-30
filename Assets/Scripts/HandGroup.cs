@@ -28,13 +28,30 @@ public class HandGroup : MonoBehaviour
         boat = b; slot = s; LocalX = localX; Count = count;
         transform.SetParent(b.transform, false);
         transform.localPosition = new Vector3(localX, Tuning.I.rimY, 0f);
-        mat = Art.Glow(Ghost, 0.45f, 1.6f);
+        var handTex = Resources.Load<Texture2D>("Models/hand_tex");
+        if (handTex)
+        {
+            mat = Art.ToonTex(handTex, 0.012f);
+            mat.SetFloat("_Emission", 0.25f);
+            mat.SetColor("_RimColor", new Color(0.5f, 1f, 0.95f, 1f));
+        }
+        else mat = Art.Glow(Ghost, 0.45f, 1.6f);
         for (int i = 0; i < count; i++)
         {
             var arm = new GameObject("Arm").transform;
             arm.SetParent(transform, false);
             float off = (i - (count - 1) * 0.5f) * 0.38f;
             arm.localPosition = new Vector3(off, -3.2f, (i % 2 == 0 ? -0.75f : 0.75f) + (i * 0.05f));
+            arms.Add(arm);
+            // Meshy hand: fingers reach just over the rim, the forearm hangs into the water.
+            var model = handTex ? Art.Model("hand", arm, 1.7f, Random.Range(-40f, 40f) + (arm.localPosition.z < 0 ? 180f : 0f), false, mat) : null;
+            if (model)
+            {
+                model.transform.localPosition = new Vector3(0f, -1.45f, 0f);
+                model.transform.localRotation = Quaternion.Euler(arm.localPosition.z < 0 ? 18f : -18f, 0f, Random.Range(-10f, 10f));
+                continue;
+            }
+            arms.RemoveAt(arms.Count - 1);
             var fore = Art.Obj("Fore", arm, Art.Capsule, mat).transform;
             fore.localScale = new Vector3(0.16f, 1.4f, 0.16f);
             fore.localPosition = new Vector3(0f, -1.3f, 0f);
@@ -85,7 +102,7 @@ public class HandGroup : MonoBehaviour
                 float p = Mathf.Clamp01(timer / T.handRiseTime);
                 float e = 1f - Mathf.Pow(1f - p, 3f);
                 SetArmHeight(Mathf.Lerp(-3.2f, 0f, e));
-                if (p >= 1f) { state = State.Holding; timer = 0f; CameraRig.Shake(0.18f); }
+                if (p >= 1f) { state = State.Holding; timer = 0f; CameraRig.Shake(0.18f); Sfx.Play("sfx_hand_grab", 0.8f, 0.15f); }
                 break;
             }
             case State.Holding:

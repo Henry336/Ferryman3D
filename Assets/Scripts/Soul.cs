@@ -25,6 +25,7 @@ public class Soul : MonoBehaviour
     {
         targetX = 0f;
         stun = Tuning.I.pokeStun;
+        Sfx.Play("sfx_soul_poke", 0.8f, 0.2f);
         LocalX += dir * 0.25f;
         retarget = stun;
     }
@@ -54,6 +55,7 @@ public class Soul : MonoBehaviour
                 float s = Mathf.Abs(boat.Angle) > 2f ? -Mathf.Sign(boat.Angle) : (Random.value < 0.5f ? -1f : 1f);
                 targetX = s * lim;
                 retarget = Random.Range(2.5f, 4.5f);
+                Sfx.Play("sfx_vengeful_hiss", 0.5f, 4f);
             }
             else
             {

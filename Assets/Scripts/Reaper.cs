@@ -7,12 +7,15 @@ public class Reaper : MonoBehaviour
     public Transform visual, scythePivot, body;
     public Renderer[] eyes;
     public Material trailMat;
+    public Animation anim;   // legacy clips from the Meshy rig (null with placeholder art)
+    public string Emote;     // set by Game for story beats, e.g. "Happy_Sway"; empty = normal locomotion
+    string playing;
 
     public float LocalX, Velocity;
     public int Facing = 1;
     public bool Controllable = true;
 
-    float cooldown, slashTimer = -1f, floatTime, idle;
+    float cooldown, slashTimer = -1f, floatTime, idle, slashBuffer;
     Vector3 floatVel;
     GameObject trail;
 
@@ -49,10 +52,13 @@ public class Reaper : MonoBehaviour
             if (LocalX > lim) { LocalX = lim; if (Velocity > 0) Velocity = 0; }
             if (LocalX < -lim) { LocalX = -lim; if (Velocity < 0) Velocity = 0; }
 
-            if (slashPressed && Controllable && cooldown <= 0f)
+            // Buffer presses made during the cooldown so mashing never drops a swing.
+            if (slashPressed) slashBuffer = 0.15f;
+            if (slashBuffer > 0f && Controllable && cooldown <= 0f)
             {
-                cooldown = T.slashCooldown; slashTimer = 0f; swung = true;
+                cooldown = T.slashCooldown; slashTimer = 0f; swung = true; slashBuffer = 0f;
             }
+            slashBuffer -= dt;
             idle = Mathf.Abs(Velocity) < 0.05f ? idle + dt : 0f;
         }
         AnimateSlash(dt);
@@ -100,12 +106,37 @@ public class Reaper : MonoBehaviour
             visual.localScale = new Vector3(Facing, 1f, 1f);
             visual.localRotation = Quaternion.Euler(0f, 0f, -Velocity * 2.5f);
         }
-        if (body)
+        if (anim)
+        {
+            string want = boat.Failed ? "Fall_Down"
+                : slashTimer >= 0f ? "Left_Slash"
+                : !string.IsNullOrEmpty(Emote) ? Emote
+                : Mathf.Abs(Velocity) > 0.3f ? "Walk"
+                : idle > 8f && idle % 14f < 3f ? "Catching_Breath" : "Idle"; // an occasional weary breather
+            PlayClip(want, want == "Left_Slash" ? 0.05f : 0.2f);
+        }
+        else if (body)
         {
             // Breathing / walk squash.
             float walk = Mathf.Abs(Velocity) / Tuning.I.maxSpeed;
             float b = Mathf.Sin(t * (walk > 0.1f ? 12f : 2f)) * (walk > 0.1f ? 0.035f : 0.02f);
             body.localScale = new Vector3(1f - b, 1f + b, 1f - b);
+        }
+    }
+
+    // Clip names come from Meshy (e.g. "Armature|Left_Slash"), so match by substring.
+    void PlayClip(string key, float fade)
+    {
+        if (playing == key) return;
+        foreach (AnimationState s in anim)
+        {
+            if (s.name.IndexOf(key, System.StringComparison.OrdinalIgnoreCase) < 0) continue;
+            bool once = key == "Left_Slash" || key == "Fall_Down";
+            s.wrapMode = once ? WrapMode.ClampForever : WrapMode.Loop;
+            if (key == "Left_Slash") { s.speed = s.length / Mathf.Max(0.05f, Tuning.I.slashDuration * 1.6f); anim.Rewind(s.name); }
+            anim.CrossFade(s.name, fade);
+            playing = key;
+            return;
         }
     }
 

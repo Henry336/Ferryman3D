@@ -4,7 +4,7 @@ using UnityEngine;
 public static class GameInput
 {
     public static float Move;
-    public static bool Slash, Act, Restart, Yes, No, Confirm;
+    public static bool Slash, Act, Restart, Yes, No, Confirm, Pause;
     public static bool TouchMode;
 
     public static Rect LeftBtn, RightBtn, SlashBtn, ActBtn;
@@ -41,6 +41,7 @@ public static class GameInput
         prevSlashT = sl; prevActT = ac;
 
         Restart = Input.GetKeyDown(KeyCode.R);
+        Pause = Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.P);
         Yes = Input.GetKeyDown(KeyCode.Y);
         No = Input.GetKeyDown(KeyCode.N) || Input.GetKeyDown(KeyCode.Escape);
         Confirm = Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Z);

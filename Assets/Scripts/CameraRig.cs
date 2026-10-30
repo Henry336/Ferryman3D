@@ -4,22 +4,25 @@ using UnityEngine;
 public class CameraRig : MonoBehaviour
 {
     static float trauma;
-    public static void Shake(float amount) { trauma = Mathf.Min(1f, trauma + amount); }
+    public static bool ShakeOn = true;
+    public static void Shake(float amount) { if (ShakeOn) trauma = Mathf.Min(1f, trauma + amount); }
 
     public Transform target;
     public Vector3 offset = new Vector3(0.6f, 1.6f, -15f);
     [Tooltip("Extra distance when the boat is near tipping.")] public float pullBack = 2.5f;
     public float intensity; // 0..1, set by Game
+    public bool menu;       // closer, boat pushed to the right of the frame for the title menu
 
     Vector3 vel;
-    float pull;
+    float pull, menuBlend;
 
     void LateUpdate()
     {
         float t = Time.time;
         pull = Mathf.Lerp(pull, intensity, 1.5f * Time.deltaTime);
+        menuBlend = Mathf.MoveTowards(menuBlend, menu ? 1f : 0f, Time.deltaTime * 0.8f);
         var ty = target ? target.position.y * 0.4f : 0f;
-        var goal = new Vector3(offset.x, offset.y + ty + pull * 0.6f, offset.z - pull * pullBack);
+        var goal = new Vector3(offset.x - menuBlend * 4.6f, offset.y + ty + pull * 0.6f - menuBlend * 0.2f, offset.z - pull * pullBack + menuBlend * 1f);
         goal += new Vector3(Mathf.Sin(t * 0.37f) * 0.15f, Mathf.Sin(t * 0.53f) * 0.1f, 0f);
         transform.position = Vector3.SmoothDamp(transform.position, goal, ref vel, 0.35f);
 
