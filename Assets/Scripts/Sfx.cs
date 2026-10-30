@@ -4,7 +4,7 @@ using UnityEngine;
 // Plays clips from Resources/Audio by name. Missing clips are silently skipped so the game runs before audio lands.
 public static class Sfx
 {
-    static AudioSource music, amb, oneShot, danger;
+    static AudioSource music, amb, oneShot, danger, moan;
     static readonly Dictionary<string, AudioClip> cache = new Dictionary<string, AudioClip>();
     static readonly Dictionary<string, float> lastPlayed = new Dictionary<string, float>();
     static string musicName;
@@ -19,6 +19,7 @@ public static class Sfx
         amb = go.AddComponent<AudioSource>(); amb.loop = true; amb.volume = 0.5f;
         oneShot = go.AddComponent<AudioSource>();
         danger = go.AddComponent<AudioSource>(); danger.loop = true; danger.volume = 0f;
+        moan = go.AddComponent<AudioSource>(); moan.loop = true; moan.volume = 0f;
     }
 
     static AudioClip Clip(string name)
@@ -65,6 +66,16 @@ public static class Sfx
         danger.volume = Mathf.MoveTowards(danger.volume, target, Time.unscaledDeltaTime * 0.8f);
         if (danger.volume > 0.001f && !danger.isPlaying) danger.Play();
         if (danger.volume <= 0.001f && danger.isPlaying) danger.Stop();
+    }
+
+    // Ghostly moan bed layered over the river on the last legs; eases toward the target volume.
+    public static void Moan(float target)
+    {
+        Ensure();
+        if (!moan.clip) { moan.clip = Clip("sfx_ghost_moan"); if (!moan.clip) return; }
+        moan.volume = Mathf.MoveTowards(moan.volume, target, Time.unscaledDeltaTime * 0.25f);
+        if (moan.volume > 0.001f && !moan.isPlaying) moan.Play();
+        if (moan.volume <= 0.001f && moan.isPlaying) moan.Stop();
     }
 
     public static void SetOn(bool on) { On = on; AudioListener.volume = on ? 1f : 0f; }

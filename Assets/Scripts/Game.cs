@@ -446,6 +446,8 @@ public class Game : MonoBehaviour
         }
 
         Sfx.Danger(state == State.Play && !paused ? Mathf.Max(Mathf.InverseLerp(0.5f, 1f, boat.TiltFraction), boat.FloodFraction) : 0f);
+        bool lateLeg = levelIndex >= 2 && (state == State.Card || state == State.Play || state == State.Dock || state == State.Failed);
+        Sfx.Moan(lateLeg ? (levelIndex == levels.Length - 1 ? 0.45f : 0.3f) : 0f);
         cam.intensity = Mathf.Clamp01(Mathf.Max(boat.TiltFraction - 0.4f, boat.SinkMeter) * 1.4f);
     }
 
