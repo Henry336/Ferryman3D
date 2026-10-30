@@ -10,12 +10,13 @@ public class Reaper : MonoBehaviour
     public Animation anim;   // legacy clips from the Meshy rig (null with placeholder art)
     public string Emote;     // set by Game for story beats, e.g. "Happy_Sway"; empty = normal locomotion
     string playing;
+    Transform handBone;
 
     public float LocalX, Velocity;
     public int Facing = 1;
     public bool Controllable = true;
 
-    float cooldown, slashTimer = -1f, floatTime, idle, slashBuffer;
+    float cooldown, slashTimer = -1f, floatTime, idle, slashBuffer, stepTimer;
     Vector3 floatVel;
     GameObject trail;
 
@@ -60,6 +61,8 @@ public class Reaper : MonoBehaviour
             }
             slashBuffer -= dt;
             idle = Mathf.Abs(Velocity) < 0.05f ? idle + dt : 0f;
+            stepTimer -= dt;
+            if (Mathf.Abs(Velocity) > 0.6f && stepTimer <= 0f) { Sfx.Play("sfx_footstep", 0.35f, 0.1f); stepTimer = 0.34f; }
         }
         AnimateSlash(dt);
         return swung;
@@ -105,6 +108,17 @@ public class Reaper : MonoBehaviour
         {
             visual.localScale = new Vector3(Facing, 1f, 1f);
             visual.localRotation = Quaternion.Euler(0f, 0f, -Velocity * 2.5f);
+        }
+        if (anim && scythePivot)
+        {
+            if (!handBone)
+                foreach (var bone in anim.GetComponentsInChildren<Transform>())
+                {
+                    string n = bone.name.ToLowerInvariant();
+                    if (n.Contains("righthand") || n.Contains("hand_r") || n.Contains("r_hand")) { handBone = bone; break; }
+                }
+            // Keep the scythe in the animated hand (stays on the fixed grip if no bone was found).
+            if (handBone) scythePivot.position = handBone.position;
         }
         if (anim)
         {

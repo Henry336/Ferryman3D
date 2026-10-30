@@ -26,7 +26,7 @@ public static class BuildTools
     // Nimble Fox web settings (see nimble-web-build-spec.md).
     static void ApplyWebSettings()
     {
-        PlayerSettings.productName = "Ferryman";
+        PlayerSettings.productName = "Bone Voyage";
         PlayerSettings.companyName = "HenryAndThatLi";
         PlayerSettings.colorSpace = ColorSpace.Gamma;
         PlayerSettings.runInBackground = true;

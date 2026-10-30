@@ -44,10 +44,10 @@ public class HandGroup : MonoBehaviour
             arm.localPosition = new Vector3(off, -3.2f, (i % 2 == 0 ? -0.75f : 0.75f) + (i * 0.05f));
             arms.Add(arm);
             // Meshy hand: fingers reach just over the rim, the forearm hangs into the water.
-            var model = handTex ? Art.Model("hand", arm, 1.7f, Random.Range(-40f, 40f) + (arm.localPosition.z < 0 ? 180f : 0f), false, mat) : null;
+            var model = handTex ? Art.Model("hand", arm, 2.8f, Random.Range(-40f, 40f) + (arm.localPosition.z < 0 ? 180f : 0f), false, mat) : null;
             if (model)
             {
-                model.transform.localPosition = new Vector3(0f, -1.45f, 0f);
+                model.transform.localPosition = new Vector3(0f, -2.55f, 0f);
                 model.transform.localRotation = Quaternion.Euler(arm.localPosition.z < 0 ? 18f : -18f, 0f, Random.Range(-10f, 10f));
                 continue;
             }

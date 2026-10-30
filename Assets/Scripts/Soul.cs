@@ -9,7 +9,7 @@ public class Soul : MonoBehaviour
     public Material mat;
     public Color baseColor;
 
-    float targetX, retarget, stun, phase, leaving = -1f;
+    float targetX, retarget, stun, phase, leaving = -1f, lastX;
 
     public float Weight => vengeful ? Tuning.I.vengefulWeight : Tuning.I.calmWeight;
     public float Torque(float cos) => leaving >= 0f ? 0f : -Weight * LocalX * cos;
@@ -55,7 +55,6 @@ public class Soul : MonoBehaviour
                 float s = Mathf.Abs(boat.Angle) > 2f ? -Mathf.Sign(boat.Angle) : (Random.value < 0.5f ? -1f : 1f);
                 targetX = s * lim;
                 retarget = Random.Range(2.5f, 4.5f);
-                Sfx.Play("sfx_vengeful_hiss", 0.5f, 4f);
             }
             else
             {
@@ -68,7 +67,14 @@ public class Soul : MonoBehaviour
         LocalX = Mathf.Clamp(LocalX, -lim, lim);
 
         float bob = Mathf.Sin(Time.time * 2.3f + phase) * 0.08f;
-        transform.position = boat.DeckPoint(LocalX) + Vector3.up * (0.95f + bob) + new Vector3(0, 0, 0.2f);
+        float moving = Mathf.Abs(LocalX - lastX) / Mathf.Max(dt, 1e-4f);
+        lastX = LocalX;
+        float hop = moving > 0.1f ? Mathf.Abs(Mathf.Sin(Time.time * 9f + phase)) * 0.1f : 0f;
+        transform.position = boat.DeckPoint(LocalX) + Vector3.up * (0.95f + bob + hop) + new Vector3(0, 0, 0.2f);
+        float sway = Mathf.Sin(Time.time * 1.7f + phase) * 6f + boat.Angle * 0.6f + (stun > 0f ? Mathf.Sin(Time.time * 30f) * 8f : 0f);
+        transform.rotation = Quaternion.Euler(0f, Mathf.Sin(Time.time * 0.6f + phase) * 25f, sway);
+        float br = Mathf.Sin(Time.time * 2.6f + phase) * 0.04f;
+        transform.localScale = new Vector3(1f + br, 1f - br, 1f + br);
 
         Color c = baseColor;
         if (vengeful && stun > 0f) c = Color.Lerp(baseColor, new Color(0.75f, 0.85f, 1f, baseColor.a), 0.6f);

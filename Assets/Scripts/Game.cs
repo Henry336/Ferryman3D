@@ -25,6 +25,7 @@ public class Game : MonoBehaviour
     readonly List<float> ridgeFactor = new List<float>();
     readonly List<Material> ridgeMats = new List<Material>();
     readonly List<Transform> embers = new List<Transform>();
+    readonly List<Transform> posts = new List<Transform>();
     Transform pier;
     float pierX;
     LevelDef L => levels[levelIndex];
@@ -99,6 +100,7 @@ public class Game : MonoBehaviour
         BuildBoat();
         BuildReaper();
         BuildPier();
+        BuildPosts();
         BuildPuppy();
         cam.target = boat.transform;
     }
@@ -224,6 +226,31 @@ public class Game : MonoBehaviour
         var other = Art.Obj("Hand2", visual, Art.Sphere, bone).transform;
         other.localScale = Vector3.one * 0.13f;
         other.localPosition = new Vector3(0.28f, 0.45f, 0.3f);
+    }
+
+    // Old mooring posts sticking out of the river; they slide past to sell forward motion.
+    void BuildPosts()
+    {
+        var wood = Art.Toon(Art.Hex("#4a3a30"), Art.Hex("#1a120d"), 0.04f);
+        var lampMat = Art.Glow(new Color(0.5f, 0.95f, 1f, 1f), 0.9f, 1.2f);
+        for (int i = 0; i < 9; i++)
+        {
+            bool front = i % 3 == 0;
+            var post = new GameObject("Post").transform;
+            post.position = new Vector3(-26f + i * 52f / 9f + Random.Range(-1.5f, 1.5f), 0f, front ? Random.Range(-5.5f, -4f) : Random.Range(5f, 9f));
+            var pole = Art.Obj("Pole", post, Art.Cylinder, wood).transform;
+            float h = Random.Range(0.9f, 2.2f);
+            pole.localScale = new Vector3(0.22f, h, 0.22f);
+            pole.localPosition = new Vector3(0, h * 0.5f, 0);
+            pole.localRotation = Quaternion.Euler(Random.Range(-12f, 12f), 0, Random.Range(-14f, 14f));
+            if (i % 2 == 1)
+            {
+                var lamp = Art.Obj("Lamp", post, Art.Sphere, lampMat).transform;
+                lamp.localScale = Vector3.one * 0.2f;
+                lamp.localPosition = new Vector3(0, h * 2f + 0.15f, 0);
+            }
+            posts.Add(post);
+        }
     }
 
     void BuildPuppy()
@@ -535,6 +562,14 @@ public class Game : MonoBehaviour
             x = Mathf.Repeat(x + 200f, 400f) - 200f;
             r.position = new Vector3(x, r.position.y, r.position.z);
         }
+        foreach (var p in posts)
+        {
+            var q = p.position;
+            q.x -= speedNow * dt * (q.z < 0 ? 1.25f : 0.85f);
+            if (q.x < -26f) q.x += 52f;
+            q.y = Waves.Height(q.x, q.z) - 0.4f;
+            p.position = q;
+        }
         foreach (var e in embers)
         {
             var p = e.position;
@@ -551,6 +586,19 @@ public class Game : MonoBehaviour
     // ---------- UI ----------
     GUIStyle big, mid, small, btn, logo, eyebrow, menuBtn, menuLeft;
     static readonly Color Bone = new Color(0.95f, 0.91f, 0.8f), Teal = new Color(0.45f, 0.82f, 0.8f);
+
+    static Texture2D fadeTex;
+    static Texture2D FadeTex
+    {
+        get
+        {
+            if (fadeTex) return fadeTex;
+            fadeTex = new Texture2D(64, 1) { wrapMode = TextureWrapMode.Clamp };
+            for (int i = 0; i < 64; i++) fadeTex.SetPixel(i, 0, new Color(1, 1, 1, 1f - i / 63f));
+            fadeTex.Apply();
+            return fadeTex;
+        }
+    }
 
     static Texture2D Tex(Color c) { var t = new Texture2D(1, 1); t.SetPixel(0, 0, c); t.Apply(); return t; }
 
@@ -595,16 +643,13 @@ public class Game : MonoBehaviour
         float panel = x + w * 0.75f;
         GUI.color = new Color(0, 0, 0, 0.5f);
         GUI.DrawTexture(new Rect(0, 0, panel, H), Texture2D.whiteTexture);
-        for (int i = 0; i < 24; i++) // soft fade-out edge
-        {
-            GUI.color = new Color(0, 0, 0, 0.5f * (1f - i / 24f));
-            GUI.DrawTexture(new Rect(panel + i * 8 * u, 0, 8 * u, H), Texture2D.whiteTexture);
-        }
+        GUI.color = new Color(0, 0, 0, 0.5f);
+        GUI.DrawTexture(new Rect(panel, 0, 200 * u, H), FadeTex); // soft fade-out edge
         GUI.color = old;
 
         float y = H * 0.24f;
         GUI.Label(new Rect(x, y, w, 24 * u), "THE RIVER STYX", eyebrow);
-        GUI.Label(new Rect(x, y + 20 * u, W, 110 * u), "FERRYMAN", logo);
+        GUI.Label(new Rect(x, y + 20 * u, W, 110 * u), "BONE VOYAGE", logo);
         GUI.Label(new Rect(x, y + 125 * u, w, 40 * u), "Final shift", menuLeft);
         GUI.color = new Color(Bone.r, Bone.g, Bone.b, 0.4f);
         GUI.DrawTexture(new Rect(x, y + 175 * u, w * 0.8f, 1.5f * u), Texture2D.whiteTexture);
@@ -636,6 +681,7 @@ public class Game : MonoBehaviour
             case State.Play:
             case State.Dock:
                 DrawProgress(W, H);
+                DrawHint(W, H);
                 break;
             case State.Docked:
                 GUI.Label(new Rect(0, H * 0.2f, W, H * 0.1f), L.to, big);
@@ -686,6 +732,24 @@ public class Game : MonoBehaviour
     }
 
     bool Blink() => Mathf.Repeat(Time.unscaledTime, 1.2f) < 0.8f;
+
+    void DrawHint(float W, float H)
+    {
+        if (state != State.Play) return;
+        string hint = null;
+        if (levelIndex == 0 && elapsed < 7f) hint = "Keep the boat level. Walk with  Arrows  or  A / D";
+        else if (levelIndex == 0 && elapsed < 14f) hint = "Hands will grab the ends.  Z  to slash them off";
+        else if (boat.SinkMeter > 0.15f) hint = "Hands in the middle are sinking the boat!  Slash them";
+        else if (boat.TiltFraction > 0.75f) hint = "Tipping!  Walk to the high side";
+        else if (levelIndex == 1 && elapsed < 6f) hint = "Red souls tip the boat on purpose.  Z  near them to poke them back";
+        if (hint == null) return;
+        float u = H / 720f;
+        var old = GUI.color;
+        GUI.color = new Color(0, 0, 0, 0.45f);
+        GUI.DrawTexture(new Rect(W * 0.2f, H * 0.8f, W * 0.6f, 44 * u), Texture2D.whiteTexture);
+        GUI.color = old;
+        GUI.Label(new Rect(0, H * 0.8f, W, 44 * u), hint, small);
+    }
 
     void DrawProgress(float W, float H)
     {
