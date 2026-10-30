@@ -358,7 +358,6 @@ public class Game : MonoBehaviour
     {
         GameInput.Update();
         if (Input.GetKeyDown(KeyCode.M)) Sfx.SetOn(!Sfx.On);
-        if (Input.GetKeyDown(KeyCode.F9)) ResetLevel(PuppyLeg, State.Play, levels[PuppyLeg].duration - 4f); // dev: jump to the puppy moment
         float dt = Time.deltaTime;
         stateTime += Time.unscaledDeltaTime;
 
@@ -604,9 +603,9 @@ public class Game : MonoBehaviour
         GUI.color = old;
 
         float y = H * 0.24f;
-        GUI.Label(new Rect(x, y, w, 24 * u), "THE RIVER STYX  ·  ONE LAST CROSSING", eyebrow);
+        GUI.Label(new Rect(x, y, w, 24 * u), "THE RIVER STYX", eyebrow);
         GUI.Label(new Rect(x, y + 20 * u, W, 110 * u), "FERRYMAN", logo);
-        GUI.Label(new Rect(x, y + 125 * u, w, 40 * u), "The reaper's final shift.", menuLeft);
+        GUI.Label(new Rect(x, y + 125 * u, w, 40 * u), "Final shift", menuLeft);
         GUI.color = new Color(Bone.r, Bone.g, Bone.b, 0.4f);
         GUI.DrawTexture(new Rect(x, y + 175 * u, w * 0.8f, 1.5f * u), Texture2D.whiteTexture);
         GUI.color = old;
@@ -632,7 +631,7 @@ public class Game : MonoBehaviour
                 DrawMenu(W, H);
                 break;
             case State.Card:
-                GUI.Label(new Rect(0, H * 0.1f, W, H * 0.1f), L.from + "  to  " + L.to, big);
+                { int f = big.fontSize; big.fontSize = Mathf.RoundToInt(Mathf.Min(f * 0.8f, W / 26f)); GUI.Label(new Rect(0, H * 0.1f, W, H * 0.1f), L.from + "  to  " + L.to, big); big.fontSize = f; }
                 break;
             case State.Play:
             case State.Dock:
@@ -654,7 +653,9 @@ public class Game : MonoBehaviour
                 break;
             case State.End:
                 GUI.Label(new Rect(0, H * 0.3f, W, H * 0.1f), "The last crossing.", big);
-                GUI.Label(new Rect(0, H * 0.42f, W, H * 0.06f), "To be continued...", mid);
+                GUI.Label(new Rect(0, H * 0.42f, W, H * 0.06f), "With you around, maybe the shifts aren't so bad after all...", mid);
+                GUI.Label(new Rect(0, H * 0.49f, W, H * 0.06f), "Guess I'll stick around a bit longer.", mid);
+                GUI.Label(new Rect(0, H * 0.58f, W, H * 0.05f), "To be continued...", small);
                 break;
         }
 
